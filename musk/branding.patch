@@ -1,0 +1,754 @@
+--- a/assets/windows/concat.iss
++++ b/assets/windows/concat.iss
+@@ -32,23 +32,23 @@
+ [Setup]
+ ; One id for the life of the product, so an install over an older one is
+ ; an upgrade and not a second copy.
+-AppId={{7B1E5C3A-3B9E-4F0B-9C6D-2F1D0C0A0C47}
+-AppName=Concat
++AppId={{4DC27614-4B98-4C2E-9393-CA04337B9E31}
++AppName=Musk Le AutoVideo
+ AppVersion={#Version}
+-AppVerName=Concat {#Version}
+-AppPublisher=Concat contributors
++AppVerName=Musk Le AutoVideo {#Version}
++AppPublisher=Musk Le AutoVideo (based on Concat)
+ AppPublisherURL=https://github.com/jub0t/Concat
+ AppSupportURL=https://github.com/jub0t/Concat/issues
+ AppUpdatesURL=https://github.com/jub0t/Concat/releases
+-DefaultDirName={autopf}\Concat
+-DefaultGroupName=Concat
++DefaultDirName={autopf}\Musk Le AutoVideo
++DefaultGroupName=Musk Le AutoVideo
+ DisableProgramGroupPage=yes
+ LicenseFile=..\..\LICENSE
+ OutputDir={#Out}
+-OutputBaseFilename=Concat-{#Version}-windows-{#Suffix}-setup
++OutputBaseFilename=Musk-Le-AutoVideo-{#Version}-windows-{#Suffix}-setup
+ SetupIconFile=..\icons\concat.ico
+ UninstallDisplayIcon={app}\concat.ico
+-UninstallDisplayName=Concat
++UninstallDisplayName=Musk Le AutoVideo
+ Compression=lzma2/max
+ SolidCompression=yes
+ WizardStyle=modern
+@@ -108,8 +108,8 @@
+ Source: "..\icons\concat.ico"; DestDir: "{app}"; Flags: ignoreversion
+ 
+ [Icons]
+-Name: "{autoprograms}\Concat"; Filename: "{app}\concat.exe"; IconFilename: "{app}\concat.ico"
+-Name: "{autodesktop}\Concat"; Filename: "{app}\concat.exe"; IconFilename: "{app}\concat.ico"; Tasks: desktopicon
++Name: "{autoprograms}\Musk Le AutoVideo"; Filename: "{app}\concat.exe"; IconFilename: "{app}\concat.ico"
++Name: "{autodesktop}\Musk Le AutoVideo"; Filename: "{app}\concat.exe"; IconFilename: "{app}\concat.ico"; Tasks: desktopicon
+ 
+ [Run]
+ Filename: "{app}\concat.exe"; Description: "{cm:LaunchProgram,Concat}"; Flags: nowait postinstall skipifsilent
+--- a/assets/windows/concat.wxs
++++ b/assets/windows/concat.wxs
+@@ -18,13 +18,13 @@
+ <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+   <!-- One upgrade code for the life of the product, so a newer .msi
+        replaces an older one rather than sitting beside it. -->
+-  <Package Name="Concat"
+-           Manufacturer="Concat contributors"
++  <Package Name="Musk Le AutoVideo"
++           Manufacturer="Musk Le AutoVideo (based on Concat)"
+            Version="$(var.Version)"
+-           UpgradeCode="6C4D5D8E-9B2A-4F3B-8E1C-5A7D2B9F0C11"
++           UpgradeCode="2BA07AF7-2F4E-489B-A1AB-7D6F3E2CC052"
+            Scope="perMachine"
+            Language="1033">
+-    <MajorUpgrade DowngradeErrorMessage="A newer version of Concat is already installed." />
++    <MajorUpgrade DowngradeErrorMessage="A newer version of Musk Le AutoVideo is already installed." />
+     <MediaTemplate EmbedCab="yes" />
+ 
+     <Icon Id="concat.ico" SourceFile="$(var.Root)\assets\icons\concat.ico" />
+@@ -32,13 +32,13 @@
+     <Property Id="ARPURLINFOABOUT" Value="https://github.com/jub0t/Concat" />
+ 
+     <StandardDirectory Id="ProgramFiles64Folder">
+-      <Directory Id="INSTALLFOLDER" Name="Concat" />
++      <Directory Id="INSTALLFOLDER" Name="Musk Le AutoVideo" />
+     </StandardDirectory>
+     <StandardDirectory Id="ProgramMenuFolder">
+-      <Directory Id="ShortcutFolder" Name="Concat" />
++      <Directory Id="ShortcutFolder" Name="Musk Le AutoVideo" />
+     </StandardDirectory>
+ 
+-    <Feature Id="Main" Title="Concat" Level="1">
++    <Feature Id="Main" Title="Musk Le AutoVideo" Level="1">
+       <ComponentGroupRef Id="Program" />
+       <ComponentRef Id="StartMenu" />
+     </Feature>
+@@ -48,15 +48,15 @@
+       <Files Include="$(var.Stage)\**" />
+     </ComponentGroup>
+ 
+-    <Component Id="StartMenu" Directory="ShortcutFolder" Guid="2F0B7C51-6E4D-4A1B-9C3E-8D5F1A2B3C44">
++    <Component Id="StartMenu" Directory="ShortcutFolder" Guid="A28F30A7-0B29-4FCA-8EB8-86B4C86A5784">
+       <Shortcut Id="StartMenuShortcut"
+-                Name="Concat"
++                Name="Musk Le AutoVideo"
+                 Description="Video editor"
+                 Target="[INSTALLFOLDER]concat.exe"
+                 WorkingDirectory="INSTALLFOLDER"
+                 Icon="concat.ico" />
+       <RemoveFolder Id="RemoveShortcutFolder" On="uninstall" />
+-      <RegistryValue Root="HKCU" Key="Software\Concat" Name="StartMenu" Type="integer" Value="1" KeyPath="yes" />
++      <RegistryValue Root="HKCU" Key="Software\MuskLeAutoVideo" Name="StartMenu" Type="integer" Value="1" KeyPath="yes" />
+     </Component>
+   </Package>
+ </Wix>
+--- a/src/crates/concat-host/src/dirs.rs
++++ b/src/crates/concat-host/src/dirs.rs
+@@ -22,7 +22,7 @@
+ use std::path::{Path, PathBuf};
+ 
+ /// The app identifier, which is also the folder name everywhere.
+-pub const IDENTIFIER: &str = "app.concat.editor";
++pub const IDENTIFIER: &str = "app.muskle.autovideo";
+ 
+ /// The app's own directories on this machine.
+ #[derive(Clone, Debug)]
+--- a/src/crates/concat/build.rs
++++ b/src/crates/concat/build.rs
+@@ -79,8 +79,8 @@
+         // build, where the default would be the crate's lower-case name.
+         winresource::WindowsResource::new()
+             .set_icon(icon)
+-            .set("ProductName", "Concat")
+-            .set("FileDescription", "Concat")
++            .set("ProductName", "Musk Le AutoVideo")
++            .set("FileDescription", "Musk Le AutoVideo — based on Concat")
+             .set(
+                 "LegalCopyright",
+                 "Copyright 2026 Jareer and Concat contributors, AGPL-3.0-or-later",
+--- a/src/crates/concat/locales/ar.json
++++ b/src/crates/concat/locales/ar.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "تلقائي",
+   "settings.checkForUpdates": "التحقق من التحديثات",
+   "settings.checkingForUpdates": "جارٍ التحقق…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "مرآة Concat",
+   "settings.copySystemInformation": "نسخ معلومات النظام",
+   "settings.couldNotCheck": "تعذّر التحقق من التحديثات: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "تراجع ({0})",
+   "tray.zoomToFit": "تكبير للملاءمة",
+   "voiceover.added": "تمت إضافة التعليق الصوتي إلى المخطط الزمني",
+-  "voiceover.failed": "تعذّر التسجيل: {0}"
++  "voiceover.failed": "تعذّر التسجيل: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/bn.json
++++ b/src/crates/concat/locales/bn.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "স্বয়ংক্রিয়",
+   "settings.checkForUpdates": "আপডেট পরীক্ষা করুন",
+   "settings.checkingForUpdates": "পরীক্ষা করা হচ্ছে…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Concat-এর মিরর",
+   "settings.copySystemInformation": "সিস্টেম তথ্য কপি করুন",
+   "settings.couldNotCheck": "আপডেট পরীক্ষা করা যায়নি: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "আনডু ({0})",
+   "tray.zoomToFit": "ফিট করতে জুম করুন",
+   "voiceover.added": "টাইমলাইনে ভয়েসওভার যোগ করা হয়েছে",
+-  "voiceover.failed": "রেকর্ড করা যায়নি: {0}"
++  "voiceover.failed": "রেকর্ড করা যায়নি: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/de.json
++++ b/src/crates/concat/locales/de.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "Automatisch",
+   "settings.checkForUpdates": "Nach Updates suchen",
+   "settings.checkingForUpdates": "Wird geprüft…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Concats Spiegel",
+   "settings.copySystemInformation": "Systeminformationen kopieren",
+   "settings.couldNotCheck": "Updates konnten nicht geprüft werden: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "Rückgängig ({0})",
+   "tray.zoomToFit": "Einpassen",
+   "voiceover.added": "Voiceover zur Zeitleiste hinzugefügt",
+-  "voiceover.failed": "Aufnahme nicht möglich: {0}"
++  "voiceover.failed": "Aufnahme nicht möglich: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/en.json
++++ b/src/crates/concat/locales/en.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "Automatic",
+   "settings.checkForUpdates": "Check for updates",
+   "settings.checkingForUpdates": "Checking…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Concat's mirror",
+   "settings.copySystemInformation": "Copy system information",
+   "settings.couldNotCheck": "Could not check for updates: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "Undo ({0})",
+   "tray.zoomToFit": "Zoom to fit",
+   "voiceover.added": "Voiceover added to the timeline",
+-  "voiceover.failed": "Couldn't record: {0}"
++  "voiceover.failed": "Couldn't record: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/es.json
++++ b/src/crates/concat/locales/es.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "Automático",
+   "settings.checkForUpdates": "Buscar actualizaciones",
+   "settings.checkingForUpdates": "Comprobando…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Espejo de Concat",
+   "settings.copySystemInformation": "Copiar información del sistema",
+   "settings.couldNotCheck": "No se pudieron buscar actualizaciones: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "Deshacer ({0})",
+   "tray.zoomToFit": "Ajustar a la vista",
+   "voiceover.added": "Voz en off añadida a la línea de tiempo",
+-  "voiceover.failed": "No se pudo grabar: {0}"
++  "voiceover.failed": "No se pudo grabar: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/fa.json
++++ b/src/crates/concat/locales/fa.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "خودکار",
+   "settings.checkForUpdates": "بررسی به‌روزرسانی‌ها",
+   "settings.checkingForUpdates": "در حال بررسی…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Mirror مربوط به Concat",
+   "settings.copySystemInformation": "کپی اطلاعات سیستم",
+   "settings.couldNotCheck": "بررسی به‌روزرسانی‌ها ممکن نشد: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "واگرد ({0})",
+   "tray.zoomToFit": "بزرگ‌نمایی متناسب",
+   "voiceover.added": "صداگذاری به خط زمانی اضافه شد",
+-  "voiceover.failed": "ضبط ممکن نشد: {0}"
++  "voiceover.failed": "ضبط ممکن نشد: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/fr.json
++++ b/src/crates/concat/locales/fr.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "Automatique",
+   "settings.checkForUpdates": "Rechercher des mises à jour",
+   "settings.checkingForUpdates": "Vérification…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Miroir de Concat",
+   "settings.copySystemInformation": "Copier les informations système",
+   "settings.couldNotCheck": "Impossible de rechercher des mises à jour : {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "Annuler ({0})",
+   "tray.zoomToFit": "Ajuster à la vue",
+   "voiceover.added": "Voix off ajoutée à la timeline",
+-  "voiceover.failed": "Enregistrement impossible : {0}"
++  "voiceover.failed": "Enregistrement impossible : {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/he.json
++++ b/src/crates/concat/locales/he.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "אוטומטי",
+   "settings.checkForUpdates": "בדיקת עדכונים",
+   "settings.checkingForUpdates": "בודק…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "המראה של Concat",
+   "settings.copySystemInformation": "העתקת פרטי המערכת",
+   "settings.couldNotCheck": "לא ניתן לבדוק עדכונים: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "ביטול פעולה ({0})",
+   "tray.zoomToFit": "זום להתאמה",
+   "voiceover.added": "הקריינות נוספה לציר הזמן",
+-  "voiceover.failed": "לא ניתן להקליט: {0}"
++  "voiceover.failed": "לא ניתן להקליט: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/hi.json
++++ b/src/crates/concat/locales/hi.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "स्वचालित",
+   "settings.checkForUpdates": "अपडेट देखें",
+   "settings.checkingForUpdates": "जांच हो रही है…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Concat का मिरर",
+   "settings.copySystemInformation": "सिस्टम जानकारी कॉपी करें",
+   "settings.couldNotCheck": "अपडेट की जांच नहीं हो सकी: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "पहले जैसा करें ({0})",
+   "tray.zoomToFit": "फ़िट करने के लिए ज़ूम करें",
+   "voiceover.added": "वॉइसओवर टाइमलाइन में जोड़ा गया",
+-  "voiceover.failed": "रिकॉर्ड नहीं हो सका: {0}"
++  "voiceover.failed": "रिकॉर्ड नहीं हो सका: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/hr.json
++++ b/src/crates/concat/locales/hr.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "Automatski",
+   "settings.checkForUpdates": "Provjeri ažuriranja",
+   "settings.checkingForUpdates": "Provjera…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Concatov zrcalni poslužitelj",
+   "settings.copySystemInformation": "Kopiraj podatke o sustavu",
+   "settings.couldNotCheck": "Ažuriranja nije bilo moguće provjeriti: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "Poništi ({0})",
+   "tray.zoomToFit": "Povećaj da stane",
+   "voiceover.added": "Glas dodan na vremensku crtu",
+-  "voiceover.failed": "Snimanje nije uspjelo: {0}"
++  "voiceover.failed": "Snimanje nije uspjelo: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/id.json
++++ b/src/crates/concat/locales/id.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "Otomatis",
+   "settings.checkForUpdates": "Periksa pembaruan",
+   "settings.checkingForUpdates": "Memeriksa…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Mirror Concat",
+   "settings.copySystemInformation": "Salin informasi sistem",
+   "settings.couldNotCheck": "Tidak dapat memeriksa pembaruan: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "Urungkan ({0})",
+   "tray.zoomToFit": "Zoom agar pas",
+   "voiceover.added": "Sulih suara ditambahkan ke linimasa",
+-  "voiceover.failed": "Tidak dapat merekam: {0}"
++  "voiceover.failed": "Tidak dapat merekam: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/it.json
++++ b/src/crates/concat/locales/it.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "Automatico",
+   "settings.checkForUpdates": "Cerca aggiornamenti",
+   "settings.checkingForUpdates": "Controllo in corso…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Mirror di Concat",
+   "settings.copySystemInformation": "Copia informazioni di sistema",
+   "settings.couldNotCheck": "Impossibile cercare aggiornamenti: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "Annulla ({0})",
+   "tray.zoomToFit": "Adatta alla vista",
+   "voiceover.added": "Voce fuori campo aggiunta alla timeline",
+-  "voiceover.failed": "Impossibile registrare: {0}"
++  "voiceover.failed": "Impossibile registrare: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/ja.json
++++ b/src/crates/concat/locales/ja.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "自動",
+   "settings.checkForUpdates": "アップデートを確認",
+   "settings.checkingForUpdates": "確認中…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Concat のミラー",
+   "settings.copySystemInformation": "システム情報をコピー",
+   "settings.couldNotCheck": "アップデートを確認できませんでした : {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "元に戻す ({0})",
+   "tray.zoomToFit": "全体を表示",
+   "voiceover.added": "ナレーションをタイムラインに追加しました",
+-  "voiceover.failed": "録音できませんでした : {0}"
++  "voiceover.failed": "録音できませんでした : {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/ko.json
++++ b/src/crates/concat/locales/ko.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "자동",
+   "settings.checkForUpdates": "업데이트 확인",
+   "settings.checkingForUpdates": "확인 중…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Concat 미러",
+   "settings.copySystemInformation": "시스템 정보 복사",
+   "settings.couldNotCheck": "업데이트를 확인할 수 없습니다: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "실행 취소 ({0})",
+   "tray.zoomToFit": "화면에 맞추기",
+   "voiceover.added": "내레이션을 타임라인에 추가했습니다",
+-  "voiceover.failed": "녹음할 수 없습니다: {0}"
++  "voiceover.failed": "녹음할 수 없습니다: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/nl.json
++++ b/src/crates/concat/locales/nl.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "Automatisch",
+   "settings.checkForUpdates": "Controleren op updates",
+   "settings.checkingForUpdates": "Controleren…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Spiegelserver van Concat",
+   "settings.copySystemInformation": "Systeeminformatie kopiëren",
+   "settings.couldNotCheck": "Kan niet controleren op updates: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "Ongedaan maken ({0})",
+   "tray.zoomToFit": "Passend zoomen",
+   "voiceover.added": "Voice-over toegevoegd aan de tijdlijn",
+-  "voiceover.failed": "Kan niet opnemen: {0}"
++  "voiceover.failed": "Kan niet opnemen: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/pl.json
++++ b/src/crates/concat/locales/pl.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "Automatycznie",
+   "settings.checkForUpdates": "Sprawdź aktualizacje",
+   "settings.checkingForUpdates": "Sprawdzanie…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Serwer lustrzany Concat",
+   "settings.copySystemInformation": "Kopiuj informacje o systemie",
+   "settings.couldNotCheck": "Nie udało się sprawdzić aktualizacji: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "Cofnij ({0})",
+   "tray.zoomToFit": "Dopasuj do okna",
+   "voiceover.added": "Nagranie lektora dodane do osi czasu",
+-  "voiceover.failed": "Nie udało się nagrać: {0}"
++  "voiceover.failed": "Nie udało się nagrać: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/pt-BR.json
++++ b/src/crates/concat/locales/pt-BR.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "Automático",
+   "settings.checkForUpdates": "Verificar atualizações",
+   "settings.checkingForUpdates": "Verificando…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Espelho do Concat",
+   "settings.copySystemInformation": "Copiar informações do sistema",
+   "settings.couldNotCheck": "Não foi possível verificar atualizações: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "Desfazer ({0})",
+   "tray.zoomToFit": "Ajustar à janela",
+   "voiceover.added": "Narração adicionada à linha do tempo",
+-  "voiceover.failed": "Não foi possível gravar: {0}"
++  "voiceover.failed": "Não foi possível gravar: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/ru.json
++++ b/src/crates/concat/locales/ru.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "Автоматически",
+   "settings.checkForUpdates": "Проверить обновления",
+   "settings.checkingForUpdates": "Проверка…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Зеркало Concat",
+   "settings.copySystemInformation": "Копировать сведения о системе",
+   "settings.couldNotCheck": "Не удалось проверить обновления: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "Отменить ({0})",
+   "tray.zoomToFit": "Вместить",
+   "voiceover.added": "Закадровый голос добавлен на таймлайн",
+-  "voiceover.failed": "Не удалось записать: {0}"
++  "voiceover.failed": "Не удалось записать: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/th.json
++++ b/src/crates/concat/locales/th.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "อัตโนมัติ",
+   "settings.checkForUpdates": "ตรวจหาอัปเดต",
+   "settings.checkingForUpdates": "กำลังตรวจสอบ…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "มิเรอร์ของ Concat",
+   "settings.copySystemInformation": "คัดลอกข้อมูลระบบ",
+   "settings.couldNotCheck": "ตรวจหาอัปเดตไม่ได้: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "เลิกทำ ({0})",
+   "tray.zoomToFit": "ซูมให้พอดี",
+   "voiceover.added": "เพิ่มเสียงพากย์ลงไทม์ไลน์แล้ว",
+-  "voiceover.failed": "บันทึกไม่ได้: {0}"
++  "voiceover.failed": "บันทึกไม่ได้: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/tr.json
++++ b/src/crates/concat/locales/tr.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "Otomatik",
+   "settings.checkForUpdates": "Güncellemeleri denetle",
+   "settings.checkingForUpdates": "Denetleniyor…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Concat yansısı",
+   "settings.copySystemInformation": "Sistem bilgilerini kopyala",
+   "settings.couldNotCheck": "Güncellemeler denetlenemedi: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "Geri al ({0})",
+   "tray.zoomToFit": "Sığdır",
+   "voiceover.added": "Seslendirme zaman çizelgesine eklendi",
+-  "voiceover.failed": "Kayıt yapılamadı: {0}"
++  "voiceover.failed": "Kayıt yapılamadı: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/uk.json
++++ b/src/crates/concat/locales/uk.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "Автоматично",
+   "settings.checkForUpdates": "Перевірити оновлення",
+   "settings.checkingForUpdates": "Перевірка…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Дзеркало Concat",
+   "settings.copySystemInformation": "Копіювати відомості про систему",
+   "settings.couldNotCheck": "Не вдалося перевірити оновлення: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "Скасувати ({0})",
+   "tray.zoomToFit": "Вмістити все",
+   "voiceover.added": "Озвучення додано на часову шкалу",
+-  "voiceover.failed": "Не вдалося записати: {0}"
++  "voiceover.failed": "Не вдалося записати: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/ur.json
++++ b/src/crates/concat/locales/ur.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "خودکار",
+   "settings.checkForUpdates": "اپ ڈیٹس چیک کریں",
+   "settings.checkingForUpdates": "چیک ہو رہا ہے…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Concat کا مرر",
+   "settings.copySystemInformation": "سسٹم کی معلومات کاپی کریں",
+   "settings.couldNotCheck": "اپ ڈیٹس چیک نہیں ہو سکیں: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "واپس لیں ({0})",
+   "tray.zoomToFit": "فٹ ہونے تک زوم",
+   "voiceover.added": "وائس اوور ٹائم لائن میں شامل ہو گیا",
+-  "voiceover.failed": "ریکارڈ نہیں ہو سکا: {0}"
++  "voiceover.failed": "ریکارڈ نہیں ہو سکا: {0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/vi.json
++++ b/src/crates/concat/locales/vi.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "Tự động",
+   "settings.checkForUpdates": "Kiểm tra cập nhật",
+   "settings.checkingForUpdates": "Đang kiểm tra…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Máy chủ nhân bản của Concat",
+   "settings.copySystemInformation": "Sao chép thông tin hệ thống",
+   "settings.couldNotCheck": "Không thể kiểm tra cập nhật: {0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "Hoàn tác ({0})",
+   "tray.zoomToFit": "Thu phóng vừa khung",
+   "voiceover.added": "Đã thêm lời thuyết minh vào dòng thời gian",
+-  "voiceover.failed": "Không thể ghi âm: {0}"
++  "voiceover.failed": "Không thể ghi âm: {0}",
++  "musk.attribution": "Dựa trên Concat · Jareer và các cộng tác viên · AGPL-3.0-or-later",
++  "musk.updateNotice": "Trang này cung cấp bản cập nhật Concat gốc, không cập nhật bản đổi tên Musk Le."
+ }
+--- a/src/crates/concat/locales/zh-Hans.json
++++ b/src/crates/concat/locales/zh-Hans.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "自动",
+   "settings.checkForUpdates": "检查更新",
+   "settings.checkingForUpdates": "正在检查…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Concat 镜像",
+   "settings.copySystemInformation": "复制系统信息",
+   "settings.couldNotCheck": "无法检查更新：{0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "撤销 ({0})",
+   "tray.zoomToFit": "缩放至适合",
+   "voiceover.added": "旁白已添加到时间线",
+-  "voiceover.failed": "无法录制：{0}"
++  "voiceover.failed": "无法录制：{0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/locales/zh-TW.json
++++ b/src/crates/concat/locales/zh-TW.json
+@@ -721,7 +721,7 @@
+   "settings.automatic": "自動",
+   "settings.checkForUpdates": "檢查更新",
+   "settings.checkingForUpdates": "正在檢查…",
+-  "settings.concat": "Concat {0}",
++  "settings.concat": "Musk Le AutoVideo {0} · Concat",
+   "settings.concatsMirror": "Concat 鏡像",
+   "settings.copySystemInformation": "拷貝系統資訊",
+   "settings.couldNotCheck": "無法檢查更新：{0}",
+@@ -1021,5 +1021,7 @@
+   "tray.undo": "復原 ({0})",
+   "tray.zoomToFit": "縮放至符合大小",
+   "voiceover.added": "旁白已加入時間軸",
+-  "voiceover.failed": "無法錄製：{0}"
++  "voiceover.failed": "無法錄製：{0}",
++  "musk.attribution": "Based on Concat · Jareer and contributors · AGPL-3.0-or-later",
++  "musk.updateNotice": "Updates on this page are upstream Concat releases. Installing one does not update the Musk Le rebrand."
+ }
+--- a/src/crates/concat/src/main.rs
++++ b/src/crates/concat/src/main.rs
+@@ -19,7 +19,7 @@
+     // with no standard output - is not a reason to panic.
+     if launch == Ok(Launch::Version) {
+         use std::io::Write;
+-        let _ = writeln!(std::io::stdout(), "concat {}", env!("CARGO_PKG_VERSION"));
++        let _ = writeln!(std::io::stdout(), "Musk Le AutoVideo / Concat {}", env!("CARGO_PKG_VERSION"));
+         return Ok(());
+     }
+     // A desktop's console is its standard error, which a packaged build
+--- a/src/crates/concat/src/panes/start.rs
++++ b/src/crates/concat/src/panes/start.rs
+@@ -118,11 +118,11 @@
+ /// new project failed with EPERM. https://github.com/jub0t/Concat/issues/299
+ fn location_on(os: &str, desktop: Option<PathBuf>, home: impl Fn(&str) -> String) -> String {
+     match os {
+-        "android" => home("Concat"),
+-        "ios" => home("Documents/Concat"),
++        "android" => home("Musk Le AutoVideo"),
++        "ios" => home("Documents/Musk Le AutoVideo"),
+         _ => desktop
+-            .map(|desktop| desktop.join("Concat").to_string_lossy().into_owned())
+-            .unwrap_or_else(|| home("Desktop/Concat")),
++            .map(|desktop| desktop.join("Musk Le AutoVideo").to_string_lossy().into_owned())
++            .unwrap_or_else(|| home("Desktop/Musk Le AutoVideo")),
+     }
+ }
+ 
+@@ -377,15 +377,15 @@
+         let desktop = || Some(PathBuf::from("/desk"));
+         assert_eq!(
+             location_on("ios", desktop(), home),
+-            "/home/Documents/Concat"
++            "/home/Documents/Musk Le AutoVideo"
+         );
+-        assert_eq!(location_on("ios", None, home), "/home/Documents/Concat");
+-        assert_eq!(location_on("android", None, home), "/home/Concat");
++        assert_eq!(location_on("ios", None, home), "/home/Documents/Musk Le AutoVideo");
++        assert_eq!(location_on("android", None, home), "/home/Musk Le AutoVideo");
+         assert_eq!(
+             PathBuf::from(location_on("macos", desktop(), home)),
+-            Path::new("/desk").join("Concat")
++            Path::new("/desk").join("Musk Le AutoVideo")
+         );
+-        assert_eq!(location_on("linux", None, home), "/home/Desktop/Concat");
++        assert_eq!(location_on("linux", None, home), "/home/Desktop/Musk Le AutoVideo");
+     }
+ 
+     /// The next untitled name skips every folder already there, and starts
+--- a/src/crates/concat/src/platform.rs
++++ b/src/crates/concat/src/platform.rs
+@@ -445,13 +445,13 @@
+ pub fn report_startup_failure(error: &str) {
+     #[cfg(not(any(target_os = "android", target_os = "ios")))]
+     {
+-        let mut description = format!("Concat could not start.\n\n{error}");
++        let mut description = format!("Musk Le AutoVideo could not start.\n\n{error}");
+         if let Some(path) = concat_host::logs::current() {
+             description.push_str(&format!("\n\nLog: {}", path.display()));
+         }
+         rfd::MessageDialog::new()
+             .set_level(rfd::MessageLevel::Error)
+-            .set_title("Concat")
++            .set_title("Musk Le AutoVideo")
+             .set_description(description)
+             .set_buttons(rfd::MessageButtons::Ok)
+             .show();
+--- a/src/crates/concat/src/studio.rs
++++ b/src/crates/concat/src/studio.rs
+@@ -10713,8 +10713,8 @@
+     #[test]
+     fn home_folder_is_under_home_with_native_separators() {
+         let home = std::env::home_dir().expect("a home directory");
+-        let folder = std::path::PathBuf::from(home_folder("Desktop/Concat"));
+-        assert_eq!(folder, home.join("Desktop").join("Concat"));
++        let folder = std::path::PathBuf::from(home_folder("Desktop/Musk Le AutoVideo"));
++        assert_eq!(folder, home.join("Desktop").join("Musk Le AutoVideo"));
+         #[cfg(windows)]
+         assert!(!folder.to_string_lossy().contains('/'));
+     }
+--- a/src/crates/concat/src/sysinfo.rs
++++ b/src/crates/concat/src/sysinfo.rs
+@@ -80,7 +80,7 @@
+     vec![
+         (
+             t("sysinfo.application"),
+-            format!("Concat {}", env!("CARGO_PKG_VERSION")),
++            format!("Musk Le AutoVideo (Concat base) {}", env!("CARGO_PKG_VERSION")),
+         ),
+         (
+             t("sysinfo.build"),
+--- a/src/crates/concat/ui/app.slint
++++ b/src/crates/concat/ui/app.slint
+@@ -66,7 +66,7 @@
+ }
+ 
+ export component App inherits Window {
+-    title: "Concat";
++    title: "Musk Le AutoVideo";
+     // The taskbar's and Alt-Tab's picture on Windows, and the window
+     // list's on X11. A Mac takes its Dock icon from the bundle and ignores
+     // this; the .exe's own, for Explorer, is embedded by build.rs.
+--- a/src/crates/concat/ui/dialogs/settings.slint
++++ b/src/crates/concat/ui/dialogs/settings.slint
+@@ -1071,6 +1071,11 @@
+                 DialogSection {
+                     first: true;
+                     title: I18n.t("settings.version");
++                    Text {
++                        text: I18n.t("musk.updateNotice");
++                        color: Theme.fg-muted;
++                        wrap: word-wrap;
++                    }
+ 
+                     VerticalLayout {
+                         spacing: 8px;
+@@ -1175,6 +1180,11 @@
+                         color: Theme.fg;
+                         font-size: Theme.fs-lg;
+                         font-weight: Theme.weight-title;
++                    }
++                    Text {
++                        text: I18n.t("musk.attribution");
++                        color: Theme.fg-muted;
++                        wrap: word-wrap;
+                     }
+                 }
+ 

@@ -17,8 +17,11 @@ with tempfile.TemporaryDirectory(prefix='muskle-source-') as temp:
   dst=ROOT/p.name
   if p.is_dir():shutil.copytree(p,dst,dirs_exist_ok=True)
   else:shutil.copy2(p,dst)
- subprocess.run(['git','apply','--check',str(ROOT/'musk/branding.patch')],cwd=ROOT,check=True)
- subprocess.run(['git','apply',str(ROOT/'musk/branding.patch')],cwd=ROOT,check=True)
+ # Windows checkout can convert the patch to CRLF; tar source retains LF.
+ patch=ROOT/'musk/branding.patch'
+ patch.write_bytes(patch.read_bytes().replace(b'\r\n',b'\n'))
+ subprocess.run(['git','-c','core.autocrlf=false','apply','--check',str(ROOT/'musk/branding.patch')],cwd=ROOT,check=True)
+ subprocess.run(['git','-c','core.autocrlf=false','apply',str(ROOT/'musk/branding.patch')],cwd=ROOT,check=True)
  for name in ['MUSK_LE_CHANGES.md','BUILD_STATUS.md']:shutil.copy2(ROOT/'musk'/name,ROOT/name)
  subprocess.run(['python','scripts/locales.py','--check'],cwd=ROOT,check=True)
  # Snapshot all corresponding source before dependency downloads/build directories exist.

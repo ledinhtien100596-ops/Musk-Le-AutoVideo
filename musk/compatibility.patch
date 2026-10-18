@@ -1,0 +1,96 @@
+--- a/src/crates/concat/src/gpu.rs
++++ b/src/crates/concat/src/gpu.rs
+@@ -21,6 +21,17 @@
+ /// [`Gpu::acquire`], because the adapter itself is moved into the monitor
+ /// before the About sheet is built.
+ static ADAPTER: OnceLock<String> = OnceLock::new();
++static COMPATIBILITY: OnceLock<bool> = OnceLock::new();
++
++/// Whether the UI must avoid sharing a software GPU with video rendering.
++pub fn compatibility_mode() -> bool {
++    COMPATIBILITY.get().copied().unwrap_or(false)
++}
++
++/// Records the backend choice before the studio is created.
++pub fn set_compatibility_mode(enabled: bool) {
++    let _ = COMPATIBILITY.set(enabled);
++}
+ 
+ /// What [`Gpu::acquire`] found, or `None` when it found nothing.
+ pub fn adapter_description() -> Option<&'static str> {
+--- a/src/crates/concat/src/platform.rs
++++ b/src/crates/concat/src/platform.rs
+@@ -331,6 +331,9 @@
+     // The device the renderer and the monitor share. Taken first, because
+     // the backend is selected with it.
+     let gpu = Gpu::acquire();
++    let compatibility = cfg!(windows) && (gpu.as_ref().is_none_or(Gpu::is_software)
++        || std::env::var("MUSK_LE_COMPATIBILITY").as_deref() == Ok("1"));
++    crate::gpu::set_compatibility_mode(compatibility);
+     match &gpu {
+         None => log::warn!("no GPU adapter; the monitor composites on the CPU"),
+         // A software adapter is refused by Slint's selector unless this
+@@ -355,7 +358,10 @@
+     let mut selector = slint::BackendSelector::new()
+         .backend_name("winit".into())
+         .with_winit_custom_application_handler(DropHandler::new(on_files_dropped, on_pressed_away));
+-    selector = match &gpu {
++    selector = if compatibility {
++        log::warn!("compatibility: software UI; automatic effect-card generation deferred");
++        selector.renderer_name("software".into())
++    } else { match &gpu {
+         Some(gpu) => selector.require_wgpu_30(gpu.configuration()),
+         None => {
+             // Without a shared device, ask for the platform's own API by
+@@ -375,7 +381,7 @@
+                 selector
+             }
+         }
+-    };
++    } };
+ 
+     // The custom title bar. The window draws its own strip, so the
+     // platform's is not wanted - but each platform is asked in its own way.
+@@ -433,7 +439,7 @@
+     // came from - its icon, its pin - rather than as an unknown app. Slint
+     // ignores it off Linux and the BSDs.
+     let _ = slint::set_xdg_app_id("concat");
+-    Ok(gpu)
++    Ok(if compatibility { None } else { gpu })
+ }
+ 
+ /// Tells the user the window could not start, in a dialog of the platform's
+--- a/src/crates/concat/src/studio.rs
++++ b/src/crates/concat/src/studio.rs
+@@ -7400,6 +7400,12 @@
+         let missing: Vec<concat_host::cards::Card> =
+             cards.into_iter().filter(|card| !card.is_drawn()).collect();
+         if missing.is_empty() {
++            return;
++        }
++        // WARP card shaders can time out and starve the UI during startup.
++        // Existing cards and all effect packages remain available.
++        if crate::gpu::compatibility_mode() {
++            log::info!("compatibility: deferred {} missing effect thumbnails", missing.len());
+             return;
+         }
+         if self.cards_busy {
+--- a/src/crates/concat/src/lib.rs
++++ b/src/crates/concat/src/lib.rs
+@@ -1901,6 +1901,16 @@
+     // and has been handed to the window. The exit is the one the event
+     // loop's end takes below, for the same reason - the engine's threads
+     // are not waited on.
++    if smoke && std::env::var("MUSK_LE_GUI_SMOKE").as_deref() == Ok("1") {
++        app.show()?;
++        slint::Timer::single_shot(std::time::Duration::from_secs(10), || {
++            log::info!("gui-smoke: event loop responsive after 10 seconds");
++            leave(0);
++        });
++        // A stalled first frame prevents the timer from running: CI times out.
++        slint::run_event_loop()?;
++        return Err(slint::PlatformError::Other("GUI test exited before its timer".into()));
++    }
+     if smoke {
+         log::info!("smoke: ok");
+         leave(0);

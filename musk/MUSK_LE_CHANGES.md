@@ -9,3 +9,7 @@ The native window title, About label, startup error label and Windows product me
 Upstream update/model endpoints remain upstream. The Version page explicitly states updates are Concat releases, not updates of this rebrand. There is no Musk Le update server. No new telemetry or network endpoint is introduced. The original logo remains; only the requested name is changed.
 
 Only the manual Windows workflow is active. Original workflows are preserved in upstream-workflows/. No releases are published automatically. The build keeps the pinned upstream dependencies and adds a Defender scan gate before the Windows smoke tests. Availability of Defender and the entire workflow still require verification on a Windows runner.
+
+## Compatibility candidate
+
+On Windows software adapters, use a separate software UI renderer and defer uncached effect-card generation to avoid startup shader contention. Existing effects remain available. Add an opt-in GUI smoke test that enters the real event loop. Export performance and compatibility on Intel HD 4400 remain unverified.

@@ -1,9 +1,7 @@
-# Build status — 2026-10-18
+# Build status — compatibility candidate
 
-SOURCE PREPARED; WINDOWS BUILD NOT RUN.
+The original renamed Windows build passed CI on 2026-10-18, but showed a white, unresponsive window on Intel HD 4400 with driver 20.19.15.5171. Its log selected Microsoft Basic Render Driver, timed out during effect-card rendering and reported device loss.
 
-This archive contains full modified source, not a ready-to-run renamed executable. The current execution environment is Linux, without Rust, MSVC/Windows SDK, or a connected Windows build runner. No Windows binary built from this modified source has been produced or tested. No security-clean certification is claimed.
+This candidate uses the software UI renderer when Windows exposes only a software GPU (or MUSK_LE_COMPATIBILITY=1). It does not share GPU textures with that UI and defers generation of missing effect thumbnails. Existing thumbnails, effect packages and editing/export commands remain present. Video rendering on this hardware may still be slow or fail; an end-to-end video export on the user's PC is not yet verified.
 
-The earlier Musk_Le_AutoVideo_Windows.zip browser wrapper is a different prototype and is not this desktop fork.
-
-Next required gate: run .github/workflows/musk-windows.yml on a Windows GitHub Actions runner; review dependency hashes, Defender results, native smoke tests and generated installers. Test editing/import/export after installation before calling the desktop release complete.
+CI adds a fresh-settings GUI event-loop test with a 10-second heartbeat and a 120-second timeout, in addition to Defender and existing startup checks. Read the specific workflow result before claiming this candidate passed. Passing these checks is not a malware-free guarantee or full editing/export verification.

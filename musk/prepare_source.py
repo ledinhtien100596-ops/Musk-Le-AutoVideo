@@ -22,6 +22,10 @@ with tempfile.TemporaryDirectory(prefix='muskle-source-') as temp:
  patch.write_bytes(patch.read_bytes().replace(b'\r\n',b'\n'))
  subprocess.run(['git','-c','core.autocrlf=false','apply','--check',str(ROOT/'musk/branding.patch')],cwd=ROOT,check=True)
  subprocess.run(['git','-c','core.autocrlf=false','apply',str(ROOT/'musk/branding.patch')],cwd=ROOT,check=True)
+ patch=ROOT/'musk/compatibility.patch'
+ patch.write_bytes(patch.read_bytes().replace(b'\r\n',b'\n'))
+ subprocess.run(['git','-c','core.autocrlf=false','apply','--check',str(patch)],cwd=ROOT,check=True)
+ subprocess.run(['git','-c','core.autocrlf=false','apply',str(patch)],cwd=ROOT,check=True)
  for name in ['MUSK_LE_CHANGES.md','BUILD_STATUS.md']:shutil.copy2(ROOT/'musk'/name,ROOT/name)
  subprocess.run(['python','scripts/locales.py','--check'],cwd=ROOT,check=True)
  # Snapshot all corresponding source before dependency downloads/build directories exist.

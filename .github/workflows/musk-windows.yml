@@ -57,77 +57,101 @@ jobs:
     - name: Read the version
       id: version
       shell: bash
-      run: |
-        version=$(sed -n 's/^version = "\(.*\)"/\1/p' src/Cargo.toml | head -1)
+      run: 'version=$(sed -n ''s/^version = "\(.*\)"/\1/p'' src/Cargo.toml | head -1)
+
         echo "version=$version" >> "$GITHUB_OUTPUT"
+
         echo "Building Concat $version for ${{ matrix.target }}"
+
+        '
     - name: FFmpeg development libraries and LLVM (Windows)
       if: matrix.platform == 'windows'
       timeout-minutes: 15
       shell: pwsh
-      run: |
-        $ErrorActionPreference = "Stop"
-        $bash = "$env:ProgramFiles\Git\bin\bash.exe"
-        & $bash scripts/ci/fetch.sh "llvm-${{ matrix.llvm }}" llvm.exe
-        if ($LASTEXITCODE -ne 0) { throw "the LLVM download failed" }
-        Start-Process -Wait -FilePath .\llvm.exe -ArgumentList "/S", "/D=C:\llvm"
-        if (-not (Test-Path C:\llvm\bin\libclang.dll)) { throw "LLVM did not install to C:\llvm" }
-        # The installer is not needed once LLVM is in place. On Windows on
-        # ARM it can still hold its own file open after it returns, which
-        # turned the deletion into the step's failure in v0.2.7-rc.1; a
-        # left-over installer in the workspace harms nothing.
-        Remove-Item llvm.exe -ErrorAction SilentlyContinue
-        if ("${{ matrix.arch }}" -eq "aarch64") {
-          "CC=clang-cl" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "CXX=clang-cl" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "CXXFLAGS=-EHsc" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "CMAKE_GENERATOR=Ninja" | Out-File -FilePath $env:GITHUB_ENV -Append
-        }
-        "C:\llvm\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-        "LIBCLANG_PATH=C:\llvm\bin" | Out-File -FilePath $env:GITHUB_ENV -Append
-        & $bash scripts/ci/fetch.sh "ffmpeg-${{ matrix.ffmpeg }}" ffmpeg-win.zip
-        if ($LASTEXITCODE -ne 0) { throw "the FFmpeg download failed" }
-        Expand-Archive ffmpeg-win.zip -DestinationPath ffdl
-        $dir = (Get-ChildItem ffdl -Directory | Select-Object -First 1).FullName
-        "FFMPEG_DIR=$dir" | Out-File -FilePath $env:GITHUB_ENV -Append
-        "$dir\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+      run: "$ErrorActionPreference = \"Stop\"\n$bash = \"$env:ProgramFiles\\Git\\bin\\bash.exe\"\n& $bash scripts/ci/fetch.sh\
+        \ \"llvm-${{ matrix.llvm }}\" llvm.exe\nif ($LASTEXITCODE -ne 0) { throw \"the LLVM download failed\" }\n\
+        Start-Process -Wait -FilePath .\\llvm.exe -ArgumentList \"/S\", \"/D=C:\\llvm\"\nif (-not (Test-Path C:\\\
+        llvm\\bin\\libclang.dll)) { throw \"LLVM did not install to C:\\llvm\" }\n# The installer is not needed\
+        \ once LLVM is in place. On Windows on\n# ARM it can still hold its own file open after it returns, which\n\
+        # turned the deletion into the step's failure in v0.2.7-rc.1; a\n# left-over installer in the workspace\
+        \ harms nothing.\nRemove-Item llvm.exe -ErrorAction SilentlyContinue\nif (\"${{ matrix.arch }}\" -eq \"\
+        aarch64\") {\n  \"CC=clang-cl\" | Out-File -FilePath $env:GITHUB_ENV -Append\n  \"CXX=clang-cl\" | Out-File\
+        \ -FilePath $env:GITHUB_ENV -Append\n  \"CXXFLAGS=-EHsc\" | Out-File -FilePath $env:GITHUB_ENV -Append\n\
+        \  \"CMAKE_GENERATOR=Ninja\" | Out-File -FilePath $env:GITHUB_ENV -Append\n}\n\"C:\\llvm\\bin\" | Out-File\
+        \ -FilePath $env:GITHUB_PATH -Append\n\"LIBCLANG_PATH=C:\\llvm\\bin\" | Out-File -FilePath $env:GITHUB_ENV\
+        \ -Append\n& $bash scripts/ci/fetch.sh \"ffmpeg-${{ matrix.ffmpeg }}\" ffmpeg-win.zip\nif ($LASTEXITCODE\
+        \ -ne 0) { throw \"the FFmpeg download failed\" }\nExpand-Archive ffmpeg-win.zip -DestinationPath ffdl\n\
+        $dir = (Get-ChildItem ffdl -Directory | Select-Object -First 1).FullName\n\"FFMPEG_DIR=$dir\" | Out-File\
+        \ -FilePath $env:GITHUB_ENV -Append\n\"$dir\\bin\" | Out-File -FilePath $env:GITHUB_PATH -Append\n"
     - name: ONNX Runtime (Windows)
       if: matrix.platform == 'windows'
       shell: pwsh
-      run: |
-        $ErrorActionPreference = "Stop"
+      run: '$ErrorActionPreference = "Stop"
+
         & "$env:ProgramFiles\Git\bin\bash.exe" scripts/ci/fetch.sh "onnxruntime-${{ matrix.ort }}" onnxruntime.zip
+
         if ($LASTEXITCODE -ne 0) { throw "the ONNX Runtime download failed" }
+
         Expand-Archive onnxruntime.zip -DestinationPath .
+
         $dir = "$PWD\onnxruntime-${{ matrix.ort }}-$env:ORT_VERSION"
+
         if (-not (Test-Path "$dir\lib\onnxruntime.lib")) { throw "$dir\lib\onnxruntime.lib is not there" }
+
         if (-not (Test-Path "$dir\lib\onnxruntime.dll")) { throw "$dir\lib\onnxruntime.dll is not there" }
+
         "ORT_LIB_LOCATION=$dir\lib" | Out-File -FilePath $env:GITHUB_ENV -Append
+
         "ORT_PREFER_DYNAMIC_LINK=1" | Out-File -FilePath $env:GITHUB_ENV -Append
+
         "ORT_DIR=$dir" | Out-File -FilePath $env:GITHUB_ENV -Append
+
         "$dir\lib" | Out-File -FilePath $env:GITHUB_PATH -Append
+
+        '
     - name: sherpa-onnx shared libraries (Windows)
       if: matrix.platform == 'windows'
       shell: pwsh
-      run: |
-        $ErrorActionPreference = "Stop"
-        $version = (Select-String -Path src\Cargo.lock -Pattern 'name = "sherpa-onnx-sys"' -Context 0,1).Context.PostContext[0] -replace '.*"(.*)".*', '$1'
+      run: '$ErrorActionPreference = "Stop"
+
+        $version = (Select-String -Path src\Cargo.lock -Pattern ''name = "sherpa-onnx-sys"'' -Context 0,1).Context.PostContext[0]
+        -replace ''.*"(.*)".*'', ''$1''
+
         $name = "sherpa-onnx-${{ matrix.sherpa }}-shared-MT-Release-lib"
+
         $stem = "sherpa-onnx-v$version-${{ matrix.sherpa }}-shared-MT-Release-lib"
+
         $bash = "$env:ProgramFiles\Git\bin\bash.exe"
+
         $url = & $bash scripts/ci/fetch.sh --url $name
-        if ($url -notmatch "/v$([regex]::Escape($version))/") { throw "scripts/ci/deps.lock pins $name for another version than Cargo.lock's $version" }
+
+        if ($url -notmatch "/v$([regex]::Escape($version))/") { throw "scripts/ci/deps.lock pins $name for another
+        version than Cargo.lock''s $version" }
+
         Write-Host "Downloading $stem"
+
         & $bash scripts/ci/fetch.sh $name sherpa.tar.bz2
+
         if ($LASTEXITCODE -ne 0) { throw "the sherpa-onnx download failed" }
+
         Write-Host "Unpacking"
-        python -c "import tarfile; t = tarfile.open('sherpa.tar.bz2'); t.extractall(**({'filter': 'data'} if hasattr(tarfile, 'data_filter') else {}))"
+
+        python -c "import tarfile; t = tarfile.open(''sherpa.tar.bz2''); t.extractall(**({''filter'': ''data''}
+        if hasattr(tarfile, ''data_filter'') else {}))"
+
         if (-not (Test-Path "$stem\lib")) { throw "$stem\lib is not there after unpacking" }
+
         New-Item -ItemType Directory -Force sherpa-libs, sherpa-dlls | Out-Null
+
         Copy-Item "$stem\lib\sherpa-onnx-*.lib" sherpa-libs\
+
         Copy-Item "$stem\lib\sherpa-onnx-*.dll" sherpa-dlls\
+
         "SHERPA_ONNX_LIB_DIR=$PWD\sherpa-libs" | Out-File -FilePath $env:GITHUB_ENV -Append
+
         "SHERPA_DLL_DIR=$PWD\sherpa-dlls" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+        '
     - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
       with:
         workspaces: src
@@ -137,70 +161,58 @@ jobs:
       timeout-minutes: ${{ matrix.platform == 'macos' && matrix.arch == 'x86_64' && 100 || 60 }}
       shell: bash
       working-directory: src
-      run: |
-        set -o pipefail
+      run: 'set -o pipefail
+
         cargo build --locked --profile app -p concat --target ${{ matrix.target }} 2>&1 | tee build.log
+
+        '
     - name: Build log to the summary (failure only)
       if: failure()
       shell: bash
-      run: |
-        if [ -f src/build.log ]; then
-          {
-            echo "### Build failed: ${{ matrix.target }}"
-            echo '```'
-            tail -n 150 src/build.log
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-        fi
+      run: "if [ -f src/build.log ]; then\n  {\n    echo \"### Build failed: ${{ matrix.target }}\"\n    echo '```'\n\
+        \    tail -n 150 src/build.log\n    echo '```'\n  } >> \"$GITHUB_STEP_SUMMARY\"\nfi\n"
     - name: Stage (Windows)
       if: matrix.platform == 'windows'
       shell: pwsh
       env:
         VERSION: ${{ steps.version.outputs.version }}
-      run: |
-        $ErrorActionPreference = "Stop"
-        $name = "Concat-$env:VERSION-windows-${{ matrix.arch }}"
-        $dir = "stage\$name"
-        New-Item -ItemType Directory -Force $dir | Out-Null
-        Copy-Item "src\target\${{ matrix.target }}\app\concat.exe" $dir
-        Copy-Item "$env:FFMPEG_DIR\bin\*.dll" $dir
-        # The sherpa-onnx runtime, set aside by the download step above.
-        Copy-Item "$env:SHERPA_DLL_DIR\*.dll" $dir
-        Copy-Item "$env:ORT_DIR\lib\*.dll" $dir
-        Copy-Item LICENSE, THIRD_PARTY_NOTICES.md $dir
-        # The Visual C++ runtime DLLs anything in the folder imports, from
-        # the newest redistributable folder Visual Studio carries.
-        $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath
-        $crt = Get-ChildItem "$vs\VC\Redist\MSVC\*\${{ matrix.vc }}\Microsoft.VC14*.CRT" -Directory |
-          Sort-Object FullName -Descending | Select-Object -First 1
-        if (-not $crt) { throw "no Visual C++ redistributable folder for ${{ matrix.vc }} under $vs" }
-        $dumpbin = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -find "VC\Tools\MSVC\**\bin\Host*\*\dumpbin.exe" | Select-Object -First 1
-        # Twice over: msvcp140.dll, once copied, imports vcruntime140.dll.
-        foreach ($pass in 1, 2) {
-          foreach ($pe in Get-ChildItem $dir -File -Include *.exe, *.dll -Recurse) {
-            foreach ($line in & $dumpbin /nologo /dependents $pe.FullName) {
-              $dll = $line.Trim()
-              if ($dll -match "\.dll$" -and (Test-Path "$($crt.FullName)\$dll") -and -not (Test-Path "$dir\$dll")) {
-                Write-Host "$($pe.Name) imports $dll; copying it from $($crt.FullName)"
-                Copy-Item "$($crt.FullName)\$dll" $dir
-              }
-            }
-          }
-        }
-        Get-ChildItem $dir | Format-Table Name, Length
-
-        Copy-Item MUSK_LE_CHANGES.md, BUILD_STATUS.md $dir
+      run: "$ErrorActionPreference = \"Stop\"\n$name = \"Concat-$env:VERSION-windows-${{ matrix.arch }}\"\n$dir\
+        \ = \"stage\\$name\"\nNew-Item -ItemType Directory -Force $dir | Out-Null\nCopy-Item \"src\\target\\${{\
+        \ matrix.target }}\\app\\concat.exe\" $dir\nCopy-Item \"$env:FFMPEG_DIR\\bin\\*.dll\" $dir\n# The sherpa-onnx\
+        \ runtime, set aside by the download step above.\nCopy-Item \"$env:SHERPA_DLL_DIR\\*.dll\" $dir\nCopy-Item\
+        \ \"$env:ORT_DIR\\lib\\*.dll\" $dir\nCopy-Item LICENSE, THIRD_PARTY_NOTICES.md $dir\n# The Visual C++ runtime\
+        \ DLLs anything in the folder imports, from\n# the newest redistributable folder Visual Studio carries.\n\
+        $vs = & \"${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products\
+        \ * -property installationPath\n$crt = Get-ChildItem \"$vs\\VC\\Redist\\MSVC\\*\\${{ matrix.vc }}\\Microsoft.VC14*.CRT\"\
+        \ -Directory |\n  Sort-Object FullName -Descending | Select-Object -First 1\nif (-not $crt) { throw \"no\
+        \ Visual C++ redistributable folder for ${{ matrix.vc }} under $vs\" }\n$dumpbin = & \"${env:ProgramFiles(x86)}\\\
+        Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products * -find \"VC\\Tools\\MSVC\\**\\bin\\\
+        Host*\\*\\dumpbin.exe\" | Select-Object -First 1\n# Twice over: msvcp140.dll, once copied, imports vcruntime140.dll.\n\
+        foreach ($pass in 1, 2) {\n  foreach ($pe in Get-ChildItem $dir -File -Include *.exe, *.dll -Recurse) {\n\
+        \    foreach ($line in & $dumpbin /nologo /dependents $pe.FullName) {\n      $dll = $line.Trim()\n     \
+        \ if ($dll -match \"\\.dll$\" -and (Test-Path \"$($crt.FullName)\\$dll\") -and -not (Test-Path \"$dir\\\
+        $dll\")) {\n        Write-Host \"$($pe.Name) imports $dll; copying it from $($crt.FullName)\"\n        Copy-Item\
+        \ \"$($crt.FullName)\\$dll\" $dir\n      }\n    }\n  }\n}\nGet-ChildItem $dir | Format-Table Name, Length\n\
+        \nCopy-Item MUSK_LE_CHANGES.md, BUILD_STATUS.md $dir\n"
     - name: Windows Defender scan before launch
       shell: pwsh
-      run: |-
-        $ErrorActionPreference = "Stop"
+      run: '$ErrorActionPreference = "Stop"
+
         $bundle = (Resolve-Path "stage\Concat-${{ steps.version.outputs.version }}-windows-x86_64").Path
+
         $status = Get-MpComputerStatus
-        if (-not $status.AntivirusEnabled) { throw "Windows Defender unavailable: scan not performed; do not mark package clean." }
+
+        if (-not $status.AntivirusEnabled) { throw "Windows Defender unavailable: scan not performed; do not mark
+        package clean." }
+
         Start-MpScan -ScanType CustomScan -ScanPath $bundle
+
         $threats = @(Get-MpThreatDetection | Where-Object { ($_.Resources -join " ") -like "*$bundle*" })
-        @{ antivirus = "Windows Defender"; signatureVersion = $status.AntivirusSignatureVersion; signatureDate = $status.AntivirusSignatureLastUpdated; threatCount = $threats.Count } | ConvertTo-Json | Set-Content stage\defender-scan.json
-        if ($threats.Count -gt 0) { throw "Defender reported a detection; review before execution." }
+
+        @{ antivirus = "Windows Defender"; signatureVersion = $status.AntivirusSignatureVersion; signatureDate =
+        $status.AntivirusSignatureLastUpdated; threatCount = $threats.Count } | ConvertTo-Json | Set-Content stage\defender-scan.json
+
+        if ($threats.Count -gt 0) { throw "Defender reported a detection; review before execution." }'
     - name: Smoke test (Windows)
       if: matrix.platform == 'windows'
       timeout-minutes: 15
@@ -208,27 +220,84 @@ jobs:
       env:
         VERSION: ${{ steps.version.outputs.version }}
       run: scripts/ci/smoke-windows.ps1 -Bundle "stage\Concat-$env:VERSION-windows-${{ matrix.arch }}"
+    - name: Compatibility UI event-loop test
+      timeout-minutes: 5
+      shell: pwsh
+      env:
+        MUSK_LE_COMPATIBILITY: '1'
+        MUSK_LE_GUI_SMOKE: '1'
+      run: '$ErrorActionPreference = "Stop"
+
+        $bundle = (Resolve-Path "stage\Concat-${{ steps.version.outputs.version }}-windows-x86_64").Path
+
+        # Isolated fresh settings for this run; no models or existing cards.
+
+        $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP "muskle-gui-test-local"
+
+        $env:APPDATA = Join-Path $env:RUNNER_TEMP "muskle-gui-test-roaming"
+
+        New-Item -ItemType Directory -Force $env:LOCALAPPDATA,$env:APPDATA | Out-Null
+
+        $p = Start-Process -FilePath "$bundle\concat.exe" -ArgumentList "--smoke" -PassThru
+
+        if (-not $p.WaitForExit(120000)) { $p.Kill(); throw "GUI test stalled for 120 seconds" }
+
+        if ($p.ExitCode -ne 0) { throw "GUI test failed: $($p.ExitCode)" }
+
+        $log = Get-ChildItem "$env:LOCALAPPDATA\app.muskle.autovideo\logs" -File | Sort-Object LastWriteTime -Descending
+        | Select-Object -First 1
+
+        if (-not $log) { throw "GUI test produced no log" }
+
+        $content = Get-Content $log.FullName -Raw
+
+        if ($content -notmatch "gui-smoke: event loop responsive after 10 seconds") { throw "No GUI heartbeat" }
+
+        if ($content -notmatch "compatibility: software UI") { throw "Compatibility path not exercised" }
+
+        if ($content -match "GPU readback:|GPU device was lost|panicked") { throw "Rendering error in GUI test"
+        }
+
+        Copy-Item $log.FullName stage\compatibility-gui-test.log
+
+        Write-Host $content
+
+        '
     - name: Smoke test on an emulated Ivy Bridge (Windows x86_64)
       if: matrix.platform == 'windows' && matrix.arch == 'x86_64'
       timeout-minutes: 30
       shell: pwsh
       env:
         VERSION: ${{ steps.version.outputs.version }}
-      run: |
-        $ErrorActionPreference = "Stop"
+      run: '$ErrorActionPreference = "Stop"
+
         Write-Host "downloading SDE"
+
         & "$env:ProgramFiles\Git\bin\bash.exe" scripts/ci/fetch.sh sde-win sde.tar.xz
+
         if ($LASTEXITCODE -ne 0) { throw "the SDE download failed" }
+
         Write-Host "unpacking SDE"
+
         $7z = "$env:ProgramFiles\7-Zip\7z.exe"
+
         & $7z x -y sde.tar.xz | Out-Null
+
         if ($LASTEXITCODE -ne 0) { throw "unpacking sde.tar.xz failed" }
+
         & $7z x -y -osde sde.tar | Out-Null
+
         if ($LASTEXITCODE -ne 0) { throw "unpacking sde.tar failed" }
+
         $sde = (Get-ChildItem sde -Recurse -Filter sde.exe | Select-Object -First 1).FullName
+
         if (-not $sde) { throw "sde.exe is not in the archive" }
+
         Write-Host "SDE at $sde"
+
         scripts/ci/smoke-windows.ps1 -Bundle "stage\Concat-$env:VERSION-windows-x86_64" -Sde $sde
+
+        '
     - name: Instruction-set scan (Windows x86_64)
       if: matrix.platform == 'windows' && matrix.arch == 'x86_64'
       timeout-minutes: 15
@@ -241,41 +310,27 @@ jobs:
       shell: pwsh
       env:
         VERSION: ${{ steps.version.outputs.version }}
-      run: |
-        $ErrorActionPreference = "Stop"
-        $name = "Concat-$env:VERSION-windows-${{ matrix.arch }}"
-        function Sign($file) {
-          if (-not $env:SIGNING_THUMBPRINT) { return }
-          & $env:SIGNTOOL sign /sha1 $env:SIGNING_THUMBPRINT /s My /fd SHA256 `
-            /tr http://timestamp.digicert.com /td SHA256 /d Concat $file
-          if ($LASTEXITCODE -ne 0) { throw "signtool failed on $file" }
-        }
-        # The installer, from that folder: Inno Setup, which the x64
-        # image carries and the ARM image is given. See
-        # assets/windows/concat.iss.
-        $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
-        if (-not (Test-Path $iscc)) {
-          Write-Host "Installing Inno Setup"
-          choco install innosetup --no-progress -y | Out-Null
-        }
-        if (-not (Test-Path $iscc)) { throw "Inno Setup is not at $iscc" }
-        & $iscc "/DVersion=$env:VERSION" "/DArch=${{ matrix.inno }}" "/DSuffix=${{ matrix.arch }}" `
-          "/DStage=$PWD\stage\$name" "/DOut=$PWD\stage" assets\windows\concat.iss
-        if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with $LASTEXITCODE" }
-        if (-not (Test-Path "stage\Musk-Le-AutoVideo-$env:VERSION-windows-x86_64-setup.exe")) { throw "stage\Musk-Le-AutoVideo-$env:VERSION-windows-x86_64-setup.exe is not there" }
-        Sign "stage\Musk-Le-AutoVideo-$env:VERSION-windows-x86_64-setup.exe"
-        # And the .msi, with WiX, for the machines an administrator
-        # deploys to. See assets/windows/concat.wxs.
-        dotnet tool install --global wix --version $env:WIX_VERSION | Out-Null
-        # No .wixpdb: everything in stage/ is published, and a debug
-        # database for the installer is nothing a release should carry.
-        wix build -arch ${{ matrix.wix }} -pdbtype none "-d" "Version=$env:VERSION" "-d" "Root=$PWD" "-d" "Stage=$PWD\stage\$name" `
-          -o "stage\Musk-Le-AutoVideo-$env:VERSION-windows-x86_64.msi" assets\windows\concat.wxs
-        if ($LASTEXITCODE -ne 0) { throw "WiX failed with $LASTEXITCODE" }
-        if (-not (Test-Path "stage\Musk-Le-AutoVideo-$env:VERSION-windows-x86_64.msi")) { throw "stage\Musk-Le-AutoVideo-$env:VERSION-windows-x86_64.msi is not there" }
-        Sign "stage\Musk-Le-AutoVideo-$env:VERSION-windows-x86_64.msi"
-        # The folder itself is not published: the two installers are.
-        Remove-Item -Recurse -Force "stage\$name"
+      run: "$ErrorActionPreference = \"Stop\"\n$name = \"Concat-$env:VERSION-windows-${{ matrix.arch }}\"\nfunction\
+        \ Sign($file) {\n  if (-not $env:SIGNING_THUMBPRINT) { return }\n  & $env:SIGNTOOL sign /sha1 $env:SIGNING_THUMBPRINT\
+        \ /s My /fd SHA256 `\n    /tr http://timestamp.digicert.com /td SHA256 /d Concat $file\n  if ($LASTEXITCODE\
+        \ -ne 0) { throw \"signtool failed on $file\" }\n}\n# The installer, from that folder: Inno Setup, which\
+        \ the x64\n# image carries and the ARM image is given. See\n# assets/windows/concat.iss.\n$iscc = \"${env:ProgramFiles(x86)}\\\
+        Inno Setup 6\\ISCC.exe\"\nif (-not (Test-Path $iscc)) {\n  Write-Host \"Installing Inno Setup\"\n  choco\
+        \ install innosetup --no-progress -y | Out-Null\n}\nif (-not (Test-Path $iscc)) { throw \"Inno Setup is\
+        \ not at $iscc\" }\n& $iscc \"/DVersion=$env:VERSION\" \"/DArch=${{ matrix.inno }}\" \"/DSuffix=${{ matrix.arch\
+        \ }}\" `\n  \"/DStage=$PWD\\stage\\$name\" \"/DOut=$PWD\\stage\" assets\\windows\\concat.iss\nif ($LASTEXITCODE\
+        \ -ne 0) { throw \"Inno Setup failed with $LASTEXITCODE\" }\nif (-not (Test-Path \"stage\\Musk-Le-AutoVideo-$env:VERSION-windows-x86_64-setup.exe\"\
+        )) { throw \"stage\\Musk-Le-AutoVideo-$env:VERSION-windows-x86_64-setup.exe is not there\" }\nSign \"stage\\\
+        Musk-Le-AutoVideo-$env:VERSION-windows-x86_64-setup.exe\"\n# And the .msi, with WiX, for the machines an\
+        \ administrator\n# deploys to. See assets/windows/concat.wxs.\ndotnet tool install --global wix --version\
+        \ $env:WIX_VERSION | Out-Null\n# No .wixpdb: everything in stage/ is published, and a debug\n# database\
+        \ for the installer is nothing a release should carry.\nwix build -arch ${{ matrix.wix }} -pdbtype none\
+        \ \"-d\" \"Version=$env:VERSION\" \"-d\" \"Root=$PWD\" \"-d\" \"Stage=$PWD\\stage\\$name\" `\n  -o \"stage\\\
+        Musk-Le-AutoVideo-$env:VERSION-windows-x86_64.msi\" assets\\windows\\concat.wxs\nif ($LASTEXITCODE -ne 0)\
+        \ { throw \"WiX failed with $LASTEXITCODE\" }\nif (-not (Test-Path \"stage\\Musk-Le-AutoVideo-$env:VERSION-windows-x86_64.msi\"\
+        )) { throw \"stage\\Musk-Le-AutoVideo-$env:VERSION-windows-x86_64.msi is not there\" }\nSign \"stage\\Musk-Le-AutoVideo-$env:VERSION-windows-x86_64.msi\"\
+        \n# The folder itself is not published: the two installers are.\nRemove-Item -Recurse -Force \"stage\\$name\"\
+        \n"
     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
       with:
         name: Musk-Le-AutoVideo-Windows-x64
